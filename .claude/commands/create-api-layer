@@ -22,10 +22,25 @@ if [ -z "$1" ]; then
 fi
 
 NAME=$1
+
+# 입력 검증 (보안: 경로 인젝션 방지)
+if [[ ! "$NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo -e "${RED}오류: 이름에는 영문자, 숫자, 하이픈, 언더스코어만 사용 가능합니다.${NC}"
+  exit 1
+fi
+
+# 경로 트래버설 방지
+if [[ "$NAME" == *".."* ]] || [[ "$NAME" == "/"* ]]; then
+  echo -e "${RED}오류: 유효하지 않은 이름입니다.${NC}"
+  exit 1
+fi
+
 # kebab-case로 변환
 KEBAB_NAME=$(echo "$NAME" | sed 's/\([A-Z]\)/-\1/g' | sed 's/^-//' | tr '[:upper:]' '[:lower:]')
 # PascalCase로 변환 (kebab-case에서)
 PASCAL_NAME=$(echo "$KEBAB_NAME" | perl -pe 's/(^|-)(.)/\U$2/g')
+# camelCase로 변환 (kebab-case에서)
+CAMEL_NAME=$(echo "$KEBAB_NAME" | perl -pe 's/-(.)/\U$1/g')
 
 # 파일 경로
 SERVICE_PATH="src/services/${KEBAB_NAME}.service.ts"
@@ -228,7 +243,7 @@ export class ${PASCAL_NAME}Repository {
 }
 
 // 싱글톤 인스턴스
-export const ${NAME}Repository = new ${PASCAL_NAME}Repository();
+export const ${CAMEL_NAME}Repository = new ${PASCAL_NAME}Repository();
 EOF
 
 echo -e "${GREEN}✓ ${REPOSITORY_PATH} 생성 완료${NC}"
@@ -241,7 +256,7 @@ cat > "$SERVICE_PATH" << EOF
  * 비즈니스 로직 레이어
  */
 
-import { ${NAME}Repository } from '@/repositories/${KEBAB_NAME}.repository';
+import { ${CAMEL_NAME}Repository } from '@/repositories/${KEBAB_NAME}.repository';
 import type {
   Create${PASCAL_NAME}DTO,
   Update${PASCAL_NAME}DTO,
@@ -259,7 +274,7 @@ export class ${PASCAL_NAME}Service {
    * ID로 ${PASCAL_NAME} 조회
    */
   async get${PASCAL_NAME}ById(id: string): Promise<${PASCAL_NAME}ResponseDTO> {
-    const ${NAME} = await ${NAME}Repository.findById(id);
+    const ${NAME} = await ${CAMEL_NAME}Repository.findById(id);
 
     if (!${NAME}) {
       throw new Error('${PASCAL_NAME}을(를) 찾을 수 없습니다.');
@@ -278,8 +293,8 @@ export class ${PASCAL_NAME}Service {
     const limit = filter?.limit || 10;
 
     const [items, total] = await Promise.all([
-      ${NAME}Repository.findAll(filter),
-      ${NAME}Repository.count(filter),
+      ${CAMEL_NAME}Repository.findAll(filter),
+      ${CAMEL_NAME}Repository.count(filter),
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -302,7 +317,7 @@ export class ${PASCAL_NAME}Service {
       throw new Error('이름은 필수입니다.');
     }
 
-    const ${NAME} = await ${NAME}Repository.create(data);
+    const ${NAME} = await ${CAMEL_NAME}Repository.create(data);
     return to${PASCAL_NAME}ResponseDTO(${NAME});
   }
 
@@ -314,7 +329,7 @@ export class ${PASCAL_NAME}Service {
     data: Update${PASCAL_NAME}DTO
   ): Promise<${PASCAL_NAME}ResponseDTO> {
     // 존재 여부 확인
-    const existing = await ${NAME}Repository.findById(id);
+    const existing = await ${CAMEL_NAME}Repository.findById(id);
     if (!existing) {
       throw new Error('${PASCAL_NAME}을(를) 찾을 수 없습니다.');
     }
@@ -324,7 +339,7 @@ export class ${PASCAL_NAME}Service {
       throw new Error('이름은 비어있을 수 없습니다.');
     }
 
-    const updated = await ${NAME}Repository.update(id, data);
+    const updated = await ${CAMEL_NAME}Repository.update(id, data);
     return to${PASCAL_NAME}ResponseDTO(updated);
   }
 
@@ -333,17 +348,17 @@ export class ${PASCAL_NAME}Service {
    */
   async delete${PASCAL_NAME}(id: string): Promise<void> {
     // 존재 여부 확인
-    const existing = await ${NAME}Repository.findById(id);
+    const existing = await ${CAMEL_NAME}Repository.findById(id);
     if (!existing) {
       throw new Error('${PASCAL_NAME}을(를) 찾을 수 없습니다.');
     }
 
-    await ${NAME}Repository.delete(id);
+    await ${CAMEL_NAME}Repository.delete(id);
   }
 }
 
 // 싱글톤 인스턴스
-export const ${NAME}Service = new ${PASCAL_NAME}Service();
+export const ${CAMEL_NAME}Service = new ${PASCAL_NAME}Service();
 EOF
 
 echo -e "${GREEN}✓ ${SERVICE_PATH} 생성 완료${NC}"

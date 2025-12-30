@@ -65,6 +65,18 @@ if [[ ! "$LAYOUT" =~ ^(marketing|dashboard|auth)$ ]]; then
   exit 1
 fi
 
+# 입력 검증 (보안: 경로 인젝션 방지)
+if [[ ! "$NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo -e "${RED}오류: 이름에는 영문자, 숫자, 하이픈, 언더스코어만 사용 가능합니다.${NC}"
+  exit 1
+fi
+
+# 경로 트래버설 방지
+if [[ "$NAME" == *".."* ]] || [[ "$NAME" == "/"* ]]; then
+  echo -e "${RED}오류: 유효하지 않은 이름입니다.${NC}"
+  exit 1
+fi
+
 # kebab-case로 변환
 KEBAB_NAME=$(echo "$NAME" | sed 's/\([A-Z]\)/-\1/g' | sed 's/^-//' | tr '[:upper:]' '[:lower:]')
 # PascalCase로 변환 (kebab-case에서)
