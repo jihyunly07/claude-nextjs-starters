@@ -56,7 +56,7 @@ export function ContactForm({ onSuccess, onError }: ContactFormProps) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast.success('메시지가 전송되었습니다!', {
-        description: '빠른 시일 내에 답변 드리겠습니다.',
+        description: '빠른 시일 내에 답변 드리겠습니다?',
       });
 
       form.reset();
