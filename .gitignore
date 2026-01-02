@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+# Bats 테스트 임시 파일
+.claude/commands/__tests__/test-*.tmp
 
 # next.js
 /.next/
